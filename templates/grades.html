@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}성적조회{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="card-title">수강 성적조회 <span class="muted">(2025 2학기)</span></div>
+  {% if items|length == 0 %}
+    <p class="muted">성적이 없습니다.</p>
+  {% else %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>강좌번호</th>
+          <th>교과목명</th>
+          <th>학점</th>
+          <th>성적</th>
+          <th>성적공개여부</th>
+          <th>강의평가여부</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for g in items %}
+          {% set credit = 0 if g.subject_name == "채플" else 3 %}
+          {% set 공개여부 = "공개" if g.score not in ["NP", "P"] else "비공개" %}
+          {% set 평가 = "NP과목" if g.subject_name == "채플" else "입력" %}
+          <tr>
+            <td>{{ "%04d"|format(loop.index) }}</td>
+            <td>{{ g.subject_name }}</td>
+            <td>{{ credit }}</td>
+            <td><span class="pill">{{ g.score }}</span></td>
+            <td>{{ 공개여부 }}</td>
+            <td>{{ 평가 }}</td>
+          </tr>
+          {% if current_user.role == "professor" and g.subject_name == "채플" %}
+            <tr>
+              <td colspan="6" style="text-align:left;">
+                <form method="post" action="{{ url_for('grade_update', grade_id=g.id) }}" class="inline">
+                  <label for="score-{{ g.id }}" class="muted">채플 성적 수정 (NP/P)</label>
+                  <select id="score-{{ g.id }}" name="score" class="form-control" style="max-width:140px;">
+                    <option value="NP" {% if g.score == "NP" %}selected{% endif %}>NP</option>
+                    <option value="P" {% if g.score == "P" %}selected{% endif %}>P</option>
+                  </select>
+                  <button class="btn primary" type="submit">저장</button>
+                </form>
+              </td>
+            </tr>
+          {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  <div class="info-box" style="margin-top:12px;">
+    현재 보이는 성적은 확정(성적이관)되기 이전의 성적입니다. <br>
+    <span style="color:#f97316;">강의평가가 미완료된 과목은 성적을 볼 수 없습니다.</span> 공학인증관련 학기 중간 강의평가와 대면 응답 완료 없이 성적 조회가 제한됩니다.
+  </div>
+</section>
+{% endblock %}

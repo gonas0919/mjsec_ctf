@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Puzzle</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    body { margin:0; background:#f6f7f9; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 16px; }
+    .top { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+    .board { display:grid; grid-template-columns: repeat(5, 90px); gap: 6px; padding: 14px; background:#fff; border:1px solid #e6e6e6; border-radius: 10px; }
+    .tile { width:90px; height:90px; border-radius:8px; border:1px solid #e6e6e6; background:#fff; overflow:hidden; }
+    .tile img { width:100%; height:100%; object-fit:cover; display:block; }
+    .msg { margin-top:12px; }
+    .layout { display:flex; gap:18px; align-items:flex-start; }
+  .board { display:inline-grid; grid-template-columns: repeat(5, 90px); gap: 6px; padding: 14px; }
+  .preview { width: 420px; background:#fff; border:1px solid #e6e6e6; border-radius:10px; padding:14px; }
+  .preview img { width:100%; display:block; border-radius:10px; border:1px solid #e6e6e6; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1 style="margin:0 0 6px;">Puzzle (Level 1)</h1>
+        <div class="muted">
+          limit: <b id="limit">{{ limit }}</b> · turns: <b id="turns">{{ turns }}</b>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <a class="btn" href="{{ url_for('games', level=1, limit=limit, reset=1) }}">Reset</a>
+        {% if game1_done %}
+          <a class="btn primary" href="{{ url_for('games', level=2) }}">Go Level 2</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="msg">
+      {% if locked %}
+        <div class="flash-item">제한 횟수를 초과했습니다. Reset 하거나 limit 값을 바꿔서 다시 시도하세요.</div>
+      {% endif %}
+    </div>
+
+    <div class="layout">
+        <div>
+          <div id="board" class="board"></div>
+        </div>
+      
+      </div>
+
+    <div id="result" class="card" style="display:none; margin-top:12px;">
+      <div class="title">Clear!</div>
+      <p class="muted">레벨 2로 이동할 수 있습니다.</p>
+      <a class="btn primary" href="{{ url_for('games', level=2) }}">Go Level 2</a>
+    </div>
+  </div>
+
+  <script>
+    window.PUZZLE_IMG_BASE = "{{ url_for('static', filename='puzzle/') }}";
+    window.PUZZLE_INIT_BOARD = {{ board|tojson }};
+    window.PUZZLE_LOCKED = {{ 'true' if locked else 'false' }};
+  </script>
+  <script defer src="{{ url_for('static', filename='puzzle_game.js') }}"></script>
+</body>
+</html>

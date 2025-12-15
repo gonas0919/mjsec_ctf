@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}홈{% endblock %}
+{% block content %}
+
+<div class="dashboard-grid">
+  <section class="card">
+    <div class="card-title">개인정보</div>
+    <div class="personal">
+      <div class="avatar">{{ current_user.username[:1]|upper if current_user.is_authenticated else "N" }}</div>
+      <div class="personal-details">
+        <div><strong>{{ "정지윤" if current_user.is_authenticated else "로그인 필요" }}</strong></div>
+        <div>소속: 컴퓨터공학과</div>
+        <div>학번: 60232058</div>
+        <div>최근 접속: {{ now.strftime("%Y-%m-%d %H:%M") }}</div>
+        <div>접속 IP: {{ request.remote_addr or "0.0.0.0" }}</div>
+        <div class="badge">비밀번호변경</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-title">공지사항</div>
+    <ul class="notice-list">
+      {% for n in items %}
+        <li class="notice-item">
+          <!-- /notices/0 형태로 이동: idx = n.id - 1 -->
+          <a class="notice-link" href="{{ url_for('notice_detail_idx', idx=n.id - 1) }}">
+            <span>{{ n.title }}</span>
+            <span class="notice-date">{{ n.created_at.strftime("%Y-%m-%d %H:%M") }}</span>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+
+<div class="two-col-wide">
+  <section class="card">
+    <div class="card-title">시간표 <span class="muted">2025-2학기</span></div>
+    {% set rows = [
+      {"time": "09:00 ~ 09:30", "mon": "", "tue": "", "wed": "", "thu": "", "fri": ""},
+      {"time": "09:30 ~ 10:00", "mon": "", "tue": "", "wed": "영어4 Y9535", "thu": "", "fri": ""},
+      {"time": "10:00 ~ 10:30", "mon": "", "tue": "", "wed": "", "thu": "영어회화2 영작법 Y9201", "fri": ""},
+      {"time": "10:30 ~ 11:00", "mon": "", "tue": "영어회화4 Y9201", "wed": "", "thu": "", "fri": ""},
+      {"time": "11:00 ~ 11:30", "mon": "채플 60주년채플관 2층 Y2217", "tue": "", "wed": "", "thu": "", "fri": ""},
+      {"time": "11:30 ~ 12:00", "mon": "", "tue": "", "wed": "", "thu": "", "fri": ""},
+      {"time": "12:00 ~ 12:30", "mon": "글쓰기 행복관 5층 Y9501", "tue": "", "wed": "", "thu": "", "fri": ""},
+      {"time": "12:30 ~ 13:00", "mon": "", "tue": "", "wed": "영어 행복관 5층 Y9528", "thu": "", "fri": ""},
+      {"time": "13:00 ~ 13:30", "mon": "", "tue": "", "wed": "", "thu": "", "fri": ""},
+      {"time": "13:30 ~ 14:00", "mon": "성서와인간이해 함박관 1층 Y9106", "tue": "", "wed": "", "thu": "", "fri": ""},
+      {"time": "14:00 ~ 14:30", "mon": "", "tue": "", "wed": "", "thu": "", "fri": ""},
+      {"time": "14:30 ~ 15:00", "mon": "미적분학 함박박관 5층 Y9519", "tue": "", "wed": "", "thu": "", "fri": ""},
+      {"time": "15:00 ~ 15:30", "mon": "", "tue": "", "wed": "", "thu": "4차산업혁명시대의예술 행복관 5층 Y9106", "fri": ""},
+      {"time": "15:30 ~ 16:00", "mon": "", "tue": "", "wed": "철학과인간 강의 Y2535", "thu": "", "fri": ""},
+      {"time": "16:00 ~ 16:30", "mon": "", "tue": "", "wed": "", "thu": "", "fri": ""}
+    ] %}
+    <table class="timetable">
+      <thead>
+        <tr>
+          <th class="time-col">시간</th>
+          <th>월요일</th>
+          <th>화요일</th>
+          <th>수요일</th>
+          <th>목요일</th>
+          <th>금요일</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+          <tr>
+            <td class="time-col">{{ r.time }}</td>
+            {% for day in ["mon","tue","wed","thu","fri"] %}
+              <td>
+                {% if r[day] %}
+                  <div class="course {{ loop.cycle('c-green','c-brown','c-blue','c-pink','c-yellow','c-purple') }}">
+                    <div>{{ r[day].split(" ")[0] }}</div>
+                    <small>{{ " ".join(r[day].split(" ")[1:]) }}</small>
+                  </div>
+                {% endif %}
+              </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <div class="main">
+    <section class="card">
+      <div class="card-title">학사일정 <span class="muted">2025년 12월</span></div>
+      <ul class="schedule-list">
+        <li class="schedule-item"><span class="schedule-date">11.24 - 12.05</span><span>[학부·대학원] 강의평가 기간</span></li>
+        <li class="schedule-item"><span class="schedule-date">12.01 - 12.05</span><span>[학부] 통계 개설강의 신청 및 조기개설 기간</span></li>
+        <li class="schedule-item"><span class="schedule-date">12.02 - 12.12</span><span>[학부·대학원] 기말고사 기간</span></li>
+        <li class="schedule-item"><span class="schedule-date">12.08 - 12.19</span><span>[학부·대학원] 레포트 최종 제출 기간</span></li>
+        <li class="schedule-item"><span class="schedule-date">12.12 - 12.12</span><span>[학부] 복수·부전공 신청 및 실습 과목 제출 마감</span></li>
+        <li class="schedule-item"><span class="schedule-date">12.15 - 12.19</span><span>[학부·대학원] 휴·복학을 위한 수업료 입금(개별고사) 기간</span></li>
+        <li class="schedule-item"><span class="schedule-date">12.15 - 02.07</span><span>능력개발학</span></li>
+        <li class="schedule-item"><span class="schedule-date">12.22 - 12.26</span><span>[학부·대학원] 증명서 일괄발급</span></li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <div class="card-title">자주가는 메뉴</div>
+      <ul class="quick-list">
+        <li><a href="#">수강성적조회<span>›</span></a></li>
+        <li><a href="#">재학생등록금고지서<span>›</span></a></li>
+        <li><a href="#">성적조회<span>›</span></a></li>
+        <li><a href="#">등록금납부확인<span>›</span></a></li>
+        <li><a href="#">장학금신청<span>›</span></a></li>
+        <li><a href="#">Office365(Mail) 신청<span>›</span></a></li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <div class="card-title">안내사항</div>
+      <div class="info-box">
+        정해진 변동된 연락처 변경 시 주소(거주지) 및 연락처(휴대전화 번호) 등록 서비스가 제공 가능합니다.
+        <br><br>
+        잘못된 주소 및 연락처 변경 입력으로 중요한 안내를 받지 못해 문제가 발생할 수 있습니다.
+      </div>
+    </section>
+  </div>
+</div>
+
+{% endblock %}

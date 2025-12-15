@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hint</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>Final Hint</h1>
+    <div class="card">
+      <pre class="content">{{ cipher }}</pre>
+    </div>
+
+    <p style="margin-top:12px;">
+      <a class="btn" href="{{ url_for('notices') }}">Back to Notices</a>
+      <a class="btn" href="{{ url_for('grades') }}">Go to Grades</a>
+    </p>
+  </div>
+</body>
+</html>

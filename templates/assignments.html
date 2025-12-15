@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Assignments{% endblock %}
+{% block content %}
+<h1>Assignments</h1>
+
+{% if current_user.role == "student" %}
+<form class="card" method="post" enctype="multipart/form-data">
+  <label>File</label>
+  <input type="file" name="file" />
+
+  <label>Description (optional)</label>
+  <input name="description" maxlength="200" placeholder="e.g. chapelsheet v1" />
+
+  <button class="btn primary" type="submit">Upload</button>
+  <p class="muted">허용 확장자: hwp/ppt/pptx/pdf, 최대 5MB (과제 제출용 문서만 가능)</p>
+</form>
+{% else %}
+<p class="muted">교수 계정은 업로드할 수 없습니다. (담당 학생 제출물만 열람 가능)</p>
+{% endif %}
+
+<div class="card" style="margin-top:12px;">
+  <h2 class="h2">My List</h2>
+  {% if items|length == 0 %}
+    <p class="muted">제출물이 없습니다.</p>
+  {% else %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>File</th>
+          <th>Description</th>
+          <th>Time</th>
+          <th>Download</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in items %}
+          <tr>
+            <td>{{ a.original_filename }}</td>
+            <td class="muted">{{ a.description or "-" }}</td>
+            <td class="muted">{{ a.uploaded_at.strftime("%Y-%m-%d %H:%M") }}</td>
+            <td><a class="btn" href="{{ url_for('assignment_download', assignment_id=a.id) }}">Download</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</div>
+{% endblock %}
