@@ -1,6 +1,14 @@
 {% extends "base.html" %}
 {% block title %}성적조회{% endblock %}
+
 {% block content %}
+{% if flag %}
+  <div style="background-color: #d1fae5; border: 2px solid #34d399; color: #065f46; padding: 16px; margin-bottom: 20px; border-radius: 8px; text-align: center; font-weight: bold;">
+    🎉 해킹 성공! 채플 성적이 P로 변경되었습니다! 🎉<br><br>
+    🚩 FLAG: {{ flag }}
+  </div>
+{% endif %}
+
 <section class="card">
   <div class="card-title">수강 성적조회 <span class="muted">(2025 2학기)</span></div>
   {% if items|length == 0 %}
@@ -30,20 +38,6 @@
             <td>{{ 공개여부 }}</td>
             <td>{{ 평가 }}</td>
           </tr>
-          {% if current_user.role == "professor" and g.subject_name == "채플" %}
-            <tr>
-              <td colspan="6" style="text-align:left;">
-                <form method="post" action="{{ url_for('grade_update', grade_id=g.id) }}" class="inline">
-                  <label for="score-{{ g.id }}" class="muted">채플 성적 수정 (NP/P)</label>
-                  <select id="score-{{ g.id }}" name="score" class="form-control" style="max-width:140px;">
-                    <option value="NP" {% if g.score == "NP" %}selected{% endif %}>NP</option>
-                    <option value="P" {% if g.score == "P" %}selected{% endif %}>P</option>
-                  </select>
-                  <button class="btn primary" type="submit">저장</button>
-                </form>
-              </td>
-            </tr>
-          {% endif %}
         {% endfor %}
       </tbody>
     </table>

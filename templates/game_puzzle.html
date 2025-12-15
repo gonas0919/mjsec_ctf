@@ -17,44 +17,53 @@
   .board { display:inline-grid; grid-template-columns: repeat(5, 90px); gap: 6px; padding: 14px; }
   .preview { width: 420px; background:#fff; border:1px solid #e6e6e6; border-radius:10px; padding:14px; }
   .preview img { width:100%; display:block; border-radius:10px; border:1px solid #e6e6e6; }
+  #hintOverlay {
+    display: none; /* 기본 숨김 */
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 9999;
+    text-align: center;
+  }
+  #hintOverlay img {
+    margin-top: 100px;
+    max-width: 90%;
+    max-height: 80%;
+    border: 5px solid #fff;
+    border-radius: 10px;
+  }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="top">
-      <div>
-        <h1 style="margin:0 0 6px;">Puzzle (Level 1)</h1>
-        <div class="muted">
-          limit: <b id="limit">{{ limit }}</b> · turns: <b id="turns">{{ turns }}</b>
+    <div class="wrap">
+        <div class="top">
+          <div>
+            <h1 style="margin:0 0 6px;">Puzzle (Level 1)</h1>
+            <div class="muted">
+              limit: <b id="limit">{{ limit }}</b> · turns: <b id="turns">{{ turns }}</b>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button id="btnHint" class="btn">힌트 보기</button>
+            
+            <a class="btn" href="{{ url_for('games', level=1, limit=limit, reset=1) }}">Reset</a>
+            
+            {% if game1_done %}
+              <a class="btn primary" href="{{ url_for('games', level=3) }}">Go Final Hint</a>
+            {% endif %}
+          </div>
+        </div>
+    
+        <div id="result" class="card" style="display:none; margin-top:12px;">
+          <div class="title">Clear!</div>
+          <p class="muted">최종 힌트 화면으로 이동합니다.</p>
+          <a class="btn primary" href="{{ url_for('games', level=3) }}">Go Final Hint</a>
         </div>
       </div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <a class="btn" href="{{ url_for('games', level=1, limit=limit, reset=1) }}">Reset</a>
-        {% if game1_done %}
-          <a class="btn primary" href="{{ url_for('games', level=2) }}">Go Level 2</a>
-        {% endif %}
+    
+      <div id="hintOverlay">
+        <img src="{{ url_for('static', filename='picture/my_hint.png') }}" alt="Hint Image" />
       </div>
-    </div>
-
-    <div class="msg">
-      {% if locked %}
-        <div class="flash-item">제한 횟수를 초과했습니다. Reset 하거나 limit 값을 바꿔서 다시 시도하세요.</div>
-      {% endif %}
-    </div>
-
-    <div class="layout">
-        <div>
-          <div id="board" class="board"></div>
-        </div>
-      
-      </div>
-
-    <div id="result" class="card" style="display:none; margin-top:12px;">
-      <div class="title">Clear!</div>
-      <p class="muted">레벨 2로 이동할 수 있습니다.</p>
-      <a class="btn primary" href="{{ url_for('games', level=2) }}">Go Level 2</a>
-    </div>
-  </div>
 
   <script>
     window.PUZZLE_IMG_BASE = "{{ url_for('static', filename='puzzle/') }}";
@@ -62,5 +71,31 @@
     window.PUZZLE_LOCKED = {{ 'true' if locked else 'false' }};
   </script>
   <script defer src="{{ url_for('static', filename='puzzle_game.js') }}"></script>
+  <script>
+    const btnHint = document.getElementById('btnHint');
+    const overlay = document.getElementById('hintOverlay');
+
+    // 이미 사용했는지 체크 (새로고침 시 초기화 원하면 이 부분 제거해도 됨)
+    let hintUsed = false;
+
+    btnHint.addEventListener('click', () => {
+      if (hintUsed) return;
+      
+      // 1. 힌트 표시
+      overlay.style.display = 'block';
+      hintUsed = true;
+      
+      // 2. 버튼 비활성화 (스타일 및 기능)
+      btnHint.disabled = true;
+      btnHint.textContent = "힌트 사용됨";
+      btnHint.style.opacity = "0.5";
+      btnHint.style.cursor = "not-allowed";
+
+      // 3. 1초 뒤에 끄기
+      setTimeout(() => {
+        overlay.style.display = 'none';
+      }, 1000); // 1000ms = 1초
+    });
+  </script>
 </body>
 </html>

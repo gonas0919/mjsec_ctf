@@ -284,11 +284,26 @@ def create_app():
         return render_template("notice_detail.html", item=item)
 
     # ---- Grades ----
+# app.py 안의 grades 함수 찾아서 수정
+
     @app.route("/grades")
     @login_required
     def grades():
+        # 1. 학생의 모든 성적 가져오기
         items = Grade.query.filter_by(user_id=current_user.id).order_by(Grade.subject_name.asc()).all()
-        return render_template("grades.html", items=items)
+        
+        # 2. [추가된 로직] 채플 성적이 'P'인지 확인
+        show_flag = None
+        
+        # 가져온 성적 리스트(items) 중에서 '채플' 과목을 찾음
+        for g in items:
+            if g.subject_name == "채플" and g.score == "P":
+                # 조건 만족 시 플래그를 변수에 담음
+                show_flag = app.config["FLAG"]
+                break
+                
+        # 3. 템플릿에 flag 변수(show_flag)를 함께 전달
+        return render_template("grades.html", items=items, flag=show_flag)
 
     # ---- Assignments ----
     @app.route("/assignments", methods=["GET", "POST"])
@@ -376,25 +391,39 @@ def create_app():
         except ValueError:
             level = 1
 
+        # [Level 1: Puzzle]
         if level == 1:
             limit = parse_limit()
-
-            reset = request.args.get("reset", "0") == "1"
-            uid = session.get("puzzle_uid")
-            cur_limit = session.get("puzzle_limit")
-            board = session.get("puzzle_board")
-
-            if reset or uid != current_user.id or board is None or cur_limit != limit:
-                board = list(range(1, 26))
-                random.shuffle(board)
-                session["puzzle_board"] = board
+            
+            # --- [복원된 퍼즐 로직 시작] ---
+            # 세션에 진행중인 게임이 없거나 사용자 ID가 다르면 새로 시작
+            if "puzzle_board" not in session or session.get("puzzle_uid") != current_user.id:
+                # 1~25 숫자 생성 및 셔플
+                nums = list(range(1, 26))
+                # (테스트용) 바로 풀고 싶으면 아래 주석 해제: nums = list(range(1, 26))
+                random.shuffle(nums)
+                
+                session["puzzle_board"] = nums
                 session["puzzle_turns"] = 0
                 session["puzzle_limit"] = limit
                 session["puzzle_uid"] = current_user.id
-
-            turns = int(session.get("puzzle_turns", 0))
+            
+            # 세션에서 상태 불러오기
+            board = session["puzzle_board"]
+            turns = session["puzzle_turns"]
+            # 리미트가 URL과 세션이 다르면 세션값 갱신(혹은 유지)
+            # 여기서는 세션 값을 우선하거나 URL 값을 따라가도록 재설정할 수 있음.
+            # 단순하게 세션 값을 사용.
+            
             solved = (board == list(range(1, 26)))
+            passed = bool(solved and turns <= limit)
             locked = (turns >= limit and not solved)
+            # --- [복원된 퍼즐 로직 끝] ---
+
+            # 게임 클리어 시 DB 업데이트
+            if passed and not current_user.game1_done:
+                current_user.game1_done = True
+                db.session.commit()
 
             return render_template(
                 "game_puzzle.html",
@@ -406,17 +435,12 @@ def create_app():
                 board=board,
             )
 
-        if level == 2:
-            if not current_user.game1_done:
-                flash("레벨 1을 먼저 클리어해야 합니다.")
-                return redirect(url_for("games", level=1, limit=25))
-            return render_template("game_volume.html")
-
+        # [Level 3: Final Hint] (Level 2는 삭제됨)
         if level == 3:
+            # Game 1을 깨지 않았다면 강제로 Game 1로 이동
             if not current_user.game1_done:
                 return redirect(url_for("games", level=1, limit=25))
-            if not current_user.game2_done:
-                return redirect(url_for("games", level=2))
+            
             return render_template("game_hint.html", cipher=app.config["FINAL_HINT"])
 
         abort(404)
@@ -455,7 +479,7 @@ def create_app():
                 "solved": True,
                 "passed": True,
                 "locked": False,
-                "next": url_for("games", level=2),
+                "next": url_for("games", level=3),
             })
 
         if turns >= limit:
@@ -492,20 +516,9 @@ def create_app():
             "solved": solved,
             "passed": passed,
             "locked": locked,
-            "next": url_for("games", level=2),
+            "next": url_for("games", level=3),
         })
 
-    @app.post("/api/games/volume/complete")
-    @login_required
-    def api_volume_complete():
-        if not current_user.game1_done:
-            return jsonify({"error": "level1 required"}), 403
-
-        if not current_user.game2_done:
-            current_user.game2_done = True
-            db.session.commit()
-
-        return jsonify({"ok": True, "next": url_for("games", level=3)})
 
     return app
 
