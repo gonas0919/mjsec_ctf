@@ -96,7 +96,7 @@ def seed_notices():
         Notice(
             idx=0,
             title="Notice 0: Staff-only",
-            content="Professors: please complete the games before requesting grade changes.",
+            content="학생들의 성적을 변경하기 위해서 /games 주소로 접속해주세요.",
             is_public=False,
         ),
         # 공개 공지: idx=1 (화면에는 이것만 보이게)
@@ -382,45 +382,53 @@ def create_app():
         return send_from_directory(root, a.stored_filename, as_attachment=True, download_name=a.original_filename)
 
     # ---- Games ----
+    # [app.py] games 함수 전체 교체
+
     @app.route("/games")
     @login_required
     def games():
-        level_raw = request.args.get("level", "1")
+        # ---------------------------------------------------------
+        # [추가된 로직]
+        # 사용자가 주소창에 그냥 /games 만 치고 들어오거나,
+        # 레벨 1인데 limit 파라미터를 안 적었을 경우
+        # 강제로 ?level=1&limit=25 를 붙여서 리다이렉트시킵니다.
+        # (목적: 주소창에 limit=25를 노출시켜서 해킹을 유도함)
+        # ---------------------------------------------------------
+        level_arg = request.args.get("level", "1")
+        limit_arg = request.args.get("limit")
+
+        if level_arg == "1" and limit_arg is None:
+            return redirect(url_for("games", level=1, limit=25))
+
+
+        # 아래부터는 기존 로직과 동일합니다.
         try:
-            level = int(level_raw)
+            level = int(level_arg)
         except ValueError:
             level = 1
 
         # [Level 1: Puzzle]
         if level == 1:
-            limit = parse_limit()
+            limit = parse_limit() # URL의 limit 값을 가져옴
             
-            # --- [복원된 퍼즐 로직 시작] ---
-            # 세션에 진행중인 게임이 없거나 사용자 ID가 다르면 새로 시작
+            # 세션 초기화 (없거나 사용자 다를 때)
             if "puzzle_board" not in session or session.get("puzzle_uid") != current_user.id:
-                # 1~25 숫자 생성 및 셔플
                 nums = list(range(1, 26))
-                # (테스트용) 바로 풀고 싶으면 아래 주석 해제: nums = list(range(1, 26))
                 random.shuffle(nums)
-                
                 session["puzzle_board"] = nums
                 session["puzzle_turns"] = 0
-                session["puzzle_limit"] = limit
                 session["puzzle_uid"] = current_user.id
+
+            # [핵심] URL의 limit 값을 세션에 강제 적용 (해킹 포인트)
+            session["puzzle_limit"] = limit
             
-            # 세션에서 상태 불러오기
             board = session["puzzle_board"]
             turns = session["puzzle_turns"]
-            # 리미트가 URL과 세션이 다르면 세션값 갱신(혹은 유지)
-            # 여기서는 세션 값을 우선하거나 URL 값을 따라가도록 재설정할 수 있음.
-            # 단순하게 세션 값을 사용.
             
             solved = (board == list(range(1, 26)))
             passed = bool(solved and turns <= limit)
             locked = (turns >= limit and not solved)
-            # --- [복원된 퍼즐 로직 끝] ---
 
-            # 게임 클리어 시 DB 업데이트
             if passed and not current_user.game1_done:
                 current_user.game1_done = True
                 db.session.commit()
@@ -435,9 +443,8 @@ def create_app():
                 board=board,
             )
 
-        # [Level 3: Final Hint] (Level 2는 삭제됨)
+        # [Level 3: Final Hint]
         if level == 3:
-            # Game 1을 깨지 않았다면 강제로 Game 1로 이동
             if not current_user.game1_done:
                 return redirect(url_for("games", level=1, limit=25))
             

@@ -8,94 +8,111 @@
   <style>
     body { margin:0; background:#f6f7f9; }
     .wrap { max-width: 980px; margin: 0 auto; padding: 16px; }
-    .top { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
-    .board { display:grid; grid-template-columns: repeat(5, 90px); gap: 6px; padding: 14px; background:#fff; border:1px solid #e6e6e6; border-radius: 10px; }
-    .tile { width:90px; height:90px; border-radius:8px; border:1px solid #e6e6e6; background:#fff; overflow:hidden; }
+    .top { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom: 20px; }
+    
+    /* 퍼즐 보드 스타일 */
+    .board { 
+      display: grid; 
+      grid-template-columns: repeat(5, 90px); 
+      gap: 6px; 
+      padding: 14px; 
+      background: #fff; 
+      border: 1px solid #e6e6e6; 
+      border-radius: 10px;
+      width: fit-content; 
+      margin: 0 auto; /* 중앙 정렬 */
+    }
+    .tile { 
+      width: 90px; height: 90px; 
+      border-radius: 8px; 
+      border: 1px solid #e6e6e6; 
+      background: #fff; 
+      overflow: hidden; 
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; font-weight: bold; color: #333;
+    }
+    /* 만약 이미지를 쓴다면 */
     .tile img { width:100%; height:100%; object-fit:cover; display:block; }
-    .msg { margin-top:12px; }
-    .layout { display:flex; gap:18px; align-items:flex-start; }
-  .board { display:inline-grid; grid-template-columns: repeat(5, 90px); gap: 6px; padding: 14px; }
-  .preview { width: 420px; background:#fff; border:1px solid #e6e6e6; border-radius:10px; padding:14px; }
-  .preview img { width:100%; display:block; border-radius:10px; border:1px solid #e6e6e6; }
-  #hintOverlay {
-    display: none; /* 기본 숨김 */
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.8);
-    z-index: 9999;
-    text-align: center;
-  }
-  #hintOverlay img {
-    margin-top: 100px;
-    max-width: 90%;
-    max-height: 80%;
-    border: 5px solid #fff;
-    border-radius: 10px;
-  }
+    
+    /* 힌트 오버레이 */
+    #hintOverlay {
+      display: none;
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8); z-index: 9999; text-align: center;
+    }
+    #hintOverlay img {
+      margin-top: 100px; max-width: 90%; max-height: 80%;
+      border: 5px solid #fff; border-radius: 10px;
+    }
   </style>
 </head>
 <body>
-    <div class="wrap">
-        <div class="top">
-          <div>
-            <h1 style="margin:0 0 6px;">Puzzle (Level 1)</h1>
-            <div class="muted">
-              limit: <b id="limit">{{ limit }}</b> · turns: <b id="turns">{{ turns }}</b>
-            </div>
-          </div>
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button id="btnHint" class="btn">힌트 보기</button>
-            
-            <a class="btn" href="{{ url_for('games', level=1, limit=limit, reset=1) }}">Reset</a>
-            
-            {% if game1_done %}
-              <a class="btn primary" href="{{ url_for('games', level=3) }}">Go Final Hint</a>
-            {% endif %}
-          </div>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1 style="margin:0 0 6px;">Admin Authentication (Puzzle)</h1>
+        <div class="muted">
+          limit: <b id="limit">{{ limit }}</b> · turns: <b id="turns">{{ turns }}</b>
         </div>
-    
-        <div id="result" class="card" style="display:none; margin-top:12px;">
-          <div class="title">Clear!</div>
-          <p class="muted">최종 힌트 화면으로 이동합니다.</p>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button id="btnHint" class="btn">힌트 보기</button>
+        <a class="btn" href="{{ url_for('games', level=1, limit=limit, reset=1) }}">Reset</a>
+        {% if game1_done %}
           <a class="btn primary" href="{{ url_for('games', level=3) }}">Go Final Hint</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div id="result" class="card" style="display:none; margin-bottom:12px; text-align:center;">
+      <div class="title" style="color:green;">Authentication Success!</div>
+      <p class="muted">관리자 인증이 완료되었습니다. 최종 접속 코드를 확인하세요.</p>
+      <a class="btn primary" href="{{ url_for('games', level=3) }}">Get Access Code</a>
+    </div>
+
+    <div id="board" class="board">
+      {% for num in board %}
+        <div class="tile" data-idx="{{ loop.index0 }}" data-val="{{ num }}">
+           {% if num != 25 %}
+             {{ num }}
+           {% else %}
+             {% endif %}
         </div>
-      </div>
-    
-      <div id="hintOverlay">
-        <img src="{{ url_for('static', filename='picture/my_hint.png') }}" alt="Hint Image" />
-      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div id="hintOverlay">
+    <img src="{{ url_for('static', filename='../static/picture.jpg') }}" alt="Hint Image" />
+  </div>
 
   <script>
+    // JS에 변수 전달
     window.PUZZLE_IMG_BASE = "{{ url_for('static', filename='puzzle/') }}";
     window.PUZZLE_INIT_BOARD = {{ board|tojson }};
     window.PUZZLE_LOCKED = {{ 'true' if locked else 'false' }};
   </script>
   <script defer src="{{ url_for('static', filename='puzzle_game.js') }}"></script>
+  
   <script>
+    // 힌트 버튼 로직
     const btnHint = document.getElementById('btnHint');
     const overlay = document.getElementById('hintOverlay');
-
-    // 이미 사용했는지 체크 (새로고침 시 초기화 원하면 이 부분 제거해도 됨)
     let hintUsed = false;
 
-    btnHint.addEventListener('click', () => {
-      if (hintUsed) return;
-      
-      // 1. 힌트 표시
-      overlay.style.display = 'block';
-      hintUsed = true;
-      
-      // 2. 버튼 비활성화 (스타일 및 기능)
-      btnHint.disabled = true;
-      btnHint.textContent = "힌트 사용됨";
-      btnHint.style.opacity = "0.5";
-      btnHint.style.cursor = "not-allowed";
-
-      // 3. 1초 뒤에 끄기
-      setTimeout(() => {
-        overlay.style.display = 'none';
-      }, 1000); // 1000ms = 1초
-    });
+    if(btnHint) {
+        btnHint.addEventListener('click', () => {
+        if (hintUsed) return;
+        overlay.style.display = 'block';
+        hintUsed = true;
+        btnHint.disabled = true;
+        btnHint.textContent = "힌트 사용됨";
+        btnHint.style.opacity = "0.5";
+        
+        setTimeout(() => { overlay.style.display = 'none'; }, 1000);
+        });
+    }
   </script>
 </body>
 </html>

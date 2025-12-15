@@ -19,8 +19,6 @@
         <a class="logo" href="{{ url_for('index') }}">홈</a>
         {% if current_user.is_authenticated %}
           <a href="{{ url_for('grades') }}">성적조회</a>
-          <a href="{{ url_for('assignments') }}">이의신청</a>
-          <a class="btn" href="{{ url_for('games', level=1, limit=25) }}">Games</a>
         {% endif %}
       </nav>
       <div class="top-actions">
